@@ -1,0 +1,30 @@
+### Obtener todos los usuarios
+GET http://localhost:5241/usuarios
+Accept: application/json
+
+### Obtener un usuario por mail
+GET http://localhost:5241/usuarios/ana%40example.com
+Accept: application/json
+
+### Crear un usuario
+POST http://localhost:5241/usuarios
+Content-Type: application/json
+
+{
+  "mail": "carla@example.com",
+  "nombre": "Carla",
+  "apellido": "López"
+}
+
+### Actualizar un usuario
+PUT http://localhost:5241/usuarios/ana%40example.com
+Content-Type: application/json
+
+{
+  "mail": "ana@example.com",
+  "nombre": "Ana",
+  "apellido": "Pérez"
+}
+
+### Eliminar un usuario
+DELETE http://localhost:5241/usuarios/luis%40example.com
