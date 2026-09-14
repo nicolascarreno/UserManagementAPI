@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using UserManagementAPI.Utilidades;
+using UserManagementAPI.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 

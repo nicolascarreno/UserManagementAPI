@@ -1,4 +1,4 @@
-namespace UserManagementAPI.Utilidades;
+namespace UserManagementAPI.Utilities;
 public static class Utils {
     public static bool ValidateUser(UserInput user, out string? error)
     {
