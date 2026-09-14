@@ -1,26 +1,27 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-var usuarios = new Dictionary<string, Usuario>
+var usuarios = new ConcurrentDictionary<string, Usuario>
 {
     ["ana@example.com"] = new Usuario { Nombre = "Ana", Apellido = "García" },
     ["luis@example.com"] = new Usuario { Nombre = "Luis", Apellido = "Pérez" }
 };
 
-app.MapGet("/usuarios", () => { 
+app.MapGet("/usuarios", () =>
+{
     return usuarios
-    .Select(u => new UsuarioResponse
-    {
-        Mail = u.Key,
-        Nombre = u.Value.Nombre,
-        Apellido = u.Value.Apellido
-    })
-    .OrderBy(u => u.Mail)
-    .ToList();
-    
-    });
+        .OrderBy(u => u.Key)
+        .Select(u => new UsuarioResponse
+        {
+            Mail = u.Key,
+            Nombre = u.Value.Nombre,
+            Apellido = u.Value.Apellido
+        })
+        .ToList();
+});
 
 app.MapGet("/usuarios/{mail}", (string mail) =>
 {
@@ -49,16 +50,16 @@ app.MapPost("/usuarios", (UsuarioInput nuevoUsuario) =>
         return Results.BadRequest(new { mensaje = error });
     }
 
-    if (usuarios.ContainsKey(nuevoUsuario.Mail))
-    {
-        return Results.BadRequest(new { mensaje = $"Ya existe un usuario con el mail {nuevoUsuario.Mail}." });
-    }
-
-    usuarios[nuevoUsuario.Mail] = new Usuario
+    var usuario = new Usuario
     {
         Nombre = nuevoUsuario.Nombre,
         Apellido = nuevoUsuario.Apellido
     };
+
+    if (!usuarios.TryAdd(nuevoUsuario.Mail, usuario))
+    {
+        return Results.BadRequest(new { mensaje = $"Ya existe un usuario con el mail {nuevoUsuario.Mail}." });
+    }
 
     var usuarioCreado = new UsuarioResponse
     {
@@ -71,13 +72,13 @@ app.MapPost("/usuarios", (UsuarioInput nuevoUsuario) =>
 });
 
 app.MapPut("/usuarios/{mail}", (string mail, UsuarioInput usuarioActualizado) =>
-{    
+{
     if (string.IsNullOrWhiteSpace(mail))
     {
-        return Results.BadRequest( new { mensaje = "El mail es obligatorio"});
+        return Results.BadRequest(new { mensaje = "El mail es obligatorio" });
     }
-    
-    if (!usuarios.ContainsKey(mail))
+
+    if (!usuarios.TryGetValue(mail, out var usuarioExistente))
     {
         return Results.NotFound(new { mensaje = $"No existe un usuario con mail {mail}." });
     }
@@ -87,11 +88,16 @@ app.MapPut("/usuarios/{mail}", (string mail, UsuarioInput usuarioActualizado) =>
         return Results.BadRequest(new { mensaje = error });
     }
 
-    usuarios[mail] = new Usuario
+    var usuarioActualizadoObj = new Usuario
     {
         Nombre = usuarioActualizado.Nombre,
         Apellido = usuarioActualizado.Apellido
     };
+
+    if (!usuarios.TryUpdate(mail, usuarioActualizadoObj, usuarioExistente))
+    {
+        return Results.Conflict(new { mensaje = $"El usuario con mail {mail} fue modificado por otra operación." });
+    }
 
     return Results.Ok(new UsuarioResponse
     {
@@ -108,7 +114,7 @@ app.MapDelete("/usuarios/{mail}", (string mail) =>
         return Results.BadRequest(new { mensaje = "El mail es obligatorio" });
     }
 
-    if (!usuarios.Remove(mail))
+    if (!usuarios.TryRemove(mail, out _))
     {
         return Results.NotFound(new { mensaje = $"No existe un usuario con mail {mail}." });
     }
