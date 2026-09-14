@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
@@ -7,7 +9,8 @@ var usuarios = new Dictionary<string, Usuario>
     ["luis@example.com"] = new Usuario { Nombre = "Luis", Apellido = "Pérez" }
 };
 
-app.MapGet("/usuarios", () => usuarios
+app.MapGet("/usuarios", () => { 
+    return usuarios
     .Select(u => new UsuarioResponse
     {
         Mail = u.Key,
@@ -15,10 +18,17 @@ app.MapGet("/usuarios", () => usuarios
         Apellido = u.Value.Apellido
     })
     .OrderBy(u => u.Mail)
-    .ToList());
+    .ToList();
+    
+    });
 
 app.MapGet("/usuarios/{mail}", (string mail) =>
 {
+    if (string.IsNullOrWhiteSpace(mail))
+    {
+        return Results.BadRequest(new { mensaje = "El mail es obligatorio" });
+    }
+    
     if (!usuarios.TryGetValue(mail, out var usuario))
     {
         return Results.NotFound(new { mensaje = $"No existe un usuario con mail {mail}." });
@@ -61,7 +71,12 @@ app.MapPost("/usuarios", (UsuarioInput nuevoUsuario) =>
 });
 
 app.MapPut("/usuarios/{mail}", (string mail, UsuarioInput usuarioActualizado) =>
-{
+{    
+    if (string.IsNullOrWhiteSpace(mail))
+    {
+        return Results.BadRequest( new { mensaje = "El mail es obligatorio"});
+    }
+    
     if (!usuarios.ContainsKey(mail))
     {
         return Results.NotFound(new { mensaje = $"No existe un usuario con mail {mail}." });
@@ -88,6 +103,11 @@ app.MapPut("/usuarios/{mail}", (string mail, UsuarioInput usuarioActualizado) =>
 
 app.MapDelete("/usuarios/{mail}", (string mail) =>
 {
+    if (string.IsNullOrWhiteSpace(mail))
+    {
+        return Results.BadRequest(new { mensaje = "El mail es obligatorio" });
+    }
+
     if (!usuarios.Remove(mail))
     {
         return Results.NotFound(new { mensaje = $"No existe un usuario con mail {mail}." });
@@ -112,9 +132,45 @@ static bool ValidarUsuario(UsuarioInput usuario, out string? error)
         return false;
     }
 
-    if (string.IsNullOrWhiteSpace(usuario.Mail))
+    if (!ValidarMail(usuario.Mail, out var errorMail))
     {
-        error = "El mail es obligatorio.";
+        error = errorMail;
+        return false;
+    }
+
+    error = null;
+    return true;
+}
+
+static bool ValidarMail(string mail, out string? error)
+{
+    if (string.IsNullOrWhiteSpace(mail))
+    {
+        error = "El mail es obligatorio";
+        return false;
+    }
+    if (mail.Count(c => c == '@') != 1)
+    {
+        error = "El mail debe contener exactamente un '@'";
+        return false;
+    }
+
+    var partes = mail.Split('@');
+    if (string.IsNullOrWhiteSpace(partes[0]) || string.IsNullOrWhiteSpace(partes[1]))
+    {
+        error = "Deben haber caracteres antes y despues del '@'";
+        return false;
+    }
+
+    if (partes[1].Count(c => c == '.') != 1 || partes[0].Contains('.'))
+    {
+        error = "El mail debe contener un '.' despues del '@' y no debe contener '.' antes del '@'";
+        return false;
+    }
+
+    if (mail.Contains(' '))
+    {
+        error = "El mail no debe contener espacios";
         return false;
     }
 
