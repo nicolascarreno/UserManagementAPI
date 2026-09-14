@@ -1,7 +1,16 @@
 using System.Collections.Concurrent;
 using UserManagementAPI.Utilidades;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("logs/UserManagementAPI.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+
 var app = builder.Build();
 
 app.UseExceptionHandler(exceptionHandlerApp =>
