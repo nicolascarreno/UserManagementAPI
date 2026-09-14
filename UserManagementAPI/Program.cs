@@ -1,15 +1,16 @@
 using System.Collections.Concurrent;
 using UserManagementAPI.Utilidades;
-using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.File("logs/UserManagementAPI.txt", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
 
-builder.Host.UseSerilog();
+builder.Services.AddHttpLogging(logging =>
+{
+    logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+    logging.RequestBodyLogLimit = 4096;
+    logging.ResponseBodyLogLimit = 4096;
+});
 
+builder.Services.AddAuthentication();
 
 var app = builder.Build();
 
@@ -26,6 +27,29 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         });
     });
 });
+
+app.Use(async(context, next) =>
+{
+    //Simulate authentication with a query parameteter
+    var isAuthenticated = context.Request.Query["authenticated"] == "true";
+    if (!isAuthenticated)
+    {
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("Access Denied");    
+        }
+        return;    
+    }
+    context.Response.Cookies.Append("SecureCookie", "SecureData", new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = true
+    });
+    await next();    
+});
+app.UseHttpLogging();
+
 
 var usuarios = new ConcurrentDictionary<string, Utils.Usuario>
 {

@@ -1,17 +1,17 @@
 ### Obtener todos los usuarios
-GET http://localhost:5241/usuarios
+GET http://localhost:5241/usuarios?authenticated=true
 Accept: application/json
 
 ### Obtener un usuario por mail
-GET http://localhost:5241/usuarios/ana%40example.com
+GET http://localhost:5241/usuarios/ana%40example.com?authenticated=true
 Accept: application/json
 
 ### Obtener un usuario por mail con mail inexistente
-GET http://localhost:5241/usuarios/1
+GET http://localhost:5241/usuarios/1?authenticated=true
 Accept: application/json
 
 ### Crear un usuario
-POST http://localhost:5241/usuarios
+POST http://localhost:5241/usuarios?authenticated=true
 Content-Type: application/json
 
 {
@@ -21,7 +21,7 @@ Content-Type: application/json
 }
 
 ### Crear un usuario con mail invalido
-POST http://localhost:5241/usuarios
+POST http://localhost:5241/usuarios?authenticated=true
 Content-Type: application/json
 
 {
@@ -31,7 +31,7 @@ Content-Type: application/json
 }
 
 ### Crear un usuario con nombre invalido
-POST http://localhost:5241/usuarios
+POST http://localhost:5241/usuarios?authenticated=true
 Content-Type: application/json
 
 {
@@ -41,7 +41,7 @@ Content-Type: application/json
 }
 
 ### Actualizar un usuario
-PUT http://localhost:5241/usuarios/ana%40example.com
+PUT http://localhost:5241/usuarios/ana%40example.com?authenticated=true
 Content-Type: application/json
 
 {
@@ -51,4 +51,4 @@ Content-Type: application/json
 }
 
 ### Eliminar un usuario
-DELETE http://localhost:5241/usuarios/luis%40example.com
+DELETE http://localhost:5241/usuarios/luis%40example.com?authenticated=true
