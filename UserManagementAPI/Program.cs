@@ -1,41 +1,53 @@
 using System.Collections.Concurrent;
-using Microsoft.AspNetCore.Http.HttpResults;
+using UserManagementAPI.Utilidades;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-var usuarios = new ConcurrentDictionary<string, Usuario>
+app.UseExceptionHandler(exceptionHandlerApp =>
 {
-    ["ana@example.com"] = new Usuario { Nombre = "Ana", Apellido = "García" },
-    ["luis@example.com"] = new Usuario { Nombre = "Luis", Apellido = "Pérez" }
+    exceptionHandlerApp.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            Error = "Ocurrió un error inesperado."
+        });
+    });
+});
+
+var usuarios = new ConcurrentDictionary<string, Utils.Usuario>
+{
+    ["ana@example.com"] = new Utils.Usuario { Nombre = "Ana", Apellido = "García" },
+    ["luis@example.com"] = new Utils.Usuario { Nombre = "Luis", Apellido = "Pérez" }
 };
 
 app.MapGet("/usuarios", () =>
 {
     return usuarios
-        .OrderBy(u => u.Key)
-        .Select(u => new UsuarioResponse
+        .Select(u => new Utils.UsuarioResponse
         {
             Mail = u.Key,
             Nombre = u.Value.Nombre,
             Apellido = u.Value.Apellido
-        })
-        .ToList();
+        });
 });
 
 app.MapGet("/usuarios/{mail}", (string mail) =>
 {
     if (string.IsNullOrWhiteSpace(mail))
     {
-        return Results.BadRequest(new { mensaje = "El mail es obligatorio" });
+        return Results.BadRequest(new { Error = "El mail es obligatorio" });
     }
     
     if (!usuarios.TryGetValue(mail, out var usuario))
     {
-        return Results.NotFound(new { mensaje = $"No existe un usuario con mail {mail}." });
+        return Results.NotFound(new { Error = $"No existe un usuario con mail {mail}." });
     }
 
-    return Results.Ok(new UsuarioResponse
+    return Results.Ok(new Utils.UsuarioResponse
     {
         Mail = mail,
         Nombre = usuario.Nombre,
@@ -43,14 +55,14 @@ app.MapGet("/usuarios/{mail}", (string mail) =>
     });
 });
 
-app.MapPost("/usuarios", (UsuarioInput nuevoUsuario) =>
+app.MapPost("/usuarios", (Utils.UsuarioInput nuevoUsuario) =>
 {
-    if (!ValidarUsuario(nuevoUsuario, out var error))
+    if (!Utils.ValidarUsuario(nuevoUsuario, out var error))
     {
-        return Results.BadRequest(new { mensaje = error });
+        return Results.BadRequest(new { Error = $"{error}" });
     }
 
-    var usuario = new Usuario
+    var usuario = new Utils.Usuario
     {
         Nombre = nuevoUsuario.Nombre,
         Apellido = nuevoUsuario.Apellido
@@ -58,10 +70,10 @@ app.MapPost("/usuarios", (UsuarioInput nuevoUsuario) =>
 
     if (!usuarios.TryAdd(nuevoUsuario.Mail, usuario))
     {
-        return Results.BadRequest(new { mensaje = $"Ya existe un usuario con el mail {nuevoUsuario.Mail}." });
+        return Results.BadRequest(new { Error = $"Ya existe un usuario con el mail {nuevoUsuario.Mail}." });
     }
 
-    var usuarioCreado = new UsuarioResponse
+    var usuarioCreado = new Utils.UsuarioResponse
     {
         Mail = nuevoUsuario.Mail,
         Nombre = nuevoUsuario.Nombre,
@@ -71,24 +83,24 @@ app.MapPost("/usuarios", (UsuarioInput nuevoUsuario) =>
     return Results.Created($"/usuarios/{Uri.EscapeDataString(nuevoUsuario.Mail)}", usuarioCreado);
 });
 
-app.MapPut("/usuarios/{mail}", (string mail, UsuarioInput usuarioActualizado) =>
+app.MapPut("/usuarios/{mail}", (string mail, Utils.UsuarioInput usuarioActualizado) =>
 {
     if (string.IsNullOrWhiteSpace(mail))
     {
-        return Results.BadRequest(new { mensaje = "El mail es obligatorio" });
+        return Results.BadRequest(new { Error = "El mail es obligatorio" });
     }
 
     if (!usuarios.TryGetValue(mail, out var usuarioExistente))
     {
-        return Results.NotFound(new { mensaje = $"No existe un usuario con mail {mail}." });
+        return Results.NotFound(new { Error = $"No existe un usuario con mail {mail}." });
     }
 
-    if (!ValidarUsuario(usuarioActualizado, out var error))
+    if (!Utils.ValidarUsuario(usuarioActualizado, out var error))
     {
-        return Results.BadRequest(new { mensaje = error });
+        return Results.BadRequest(new { Error = $"{error}" });
     }
 
-    var usuarioActualizadoObj = new Usuario
+    var usuarioActualizadoObj = new Utils.Usuario
     {
         Nombre = usuarioActualizado.Nombre,
         Apellido = usuarioActualizado.Apellido
@@ -96,10 +108,10 @@ app.MapPut("/usuarios/{mail}", (string mail, UsuarioInput usuarioActualizado) =>
 
     if (!usuarios.TryUpdate(mail, usuarioActualizadoObj, usuarioExistente))
     {
-        return Results.Conflict(new { mensaje = $"El usuario con mail {mail} fue modificado por otra operación." });
+        return Results.Conflict(new { Error = $"El usuario con mail {mail} fue modificado por otra operación." });
     }
 
-    return Results.Ok(new UsuarioResponse
+    return Results.Ok(new Utils.UsuarioResponse
     {
         Mail = mail,
         Nombre = usuarioActualizado.Nombre,
@@ -111,96 +123,15 @@ app.MapDelete("/usuarios/{mail}", (string mail) =>
 {
     if (string.IsNullOrWhiteSpace(mail))
     {
-        return Results.BadRequest(new { mensaje = "El mail es obligatorio" });
+        return Results.BadRequest(new { Error = "El mail es obligatorio" });
     }
 
     if (!usuarios.TryRemove(mail, out _))
     {
-        return Results.NotFound(new { mensaje = $"No existe un usuario con mail {mail}." });
+        return Results.NotFound(new { Error = $"No existe un usuario con mail {mail}." });
     }
 
     return Results.NoContent();
 });
 
 app.Run();
-
-static bool ValidarUsuario(UsuarioInput usuario, out string? error)
-{
-    if (string.IsNullOrWhiteSpace(usuario.Nombre))
-    {
-        error = "El nombre es obligatorio.";
-        return false;
-    }
-
-    if (string.IsNullOrWhiteSpace(usuario.Apellido))
-    {
-        error = "El apellido es obligatorio.";
-        return false;
-    }
-
-    if (!ValidarMail(usuario.Mail, out var errorMail))
-    {
-        error = errorMail;
-        return false;
-    }
-
-    error = null;
-    return true;
-}
-
-static bool ValidarMail(string mail, out string? error)
-{
-    if (string.IsNullOrWhiteSpace(mail))
-    {
-        error = "El mail es obligatorio";
-        return false;
-    }
-    if (mail.Count(c => c == '@') != 1)
-    {
-        error = "El mail debe contener exactamente un '@'";
-        return false;
-    }
-
-    var partes = mail.Split('@');
-    if (string.IsNullOrWhiteSpace(partes[0]) || string.IsNullOrWhiteSpace(partes[1]))
-    {
-        error = "Deben haber caracteres antes y despues del '@'";
-        return false;
-    }
-
-    if (partes[1].Count(c => c == '.') != 1 || partes[0].Contains('.'))
-    {
-        error = "El mail debe contener un '.' despues del '@' y no debe contener '.' antes del '@'";
-        return false;
-    }
-
-    if (mail.Contains(' '))
-    {
-        error = "El mail no debe contener espacios";
-        return false;
-    }
-
-    error = null;
-    return true;
-}
-
-public class Usuario
-{
-    public string Nombre { get; set; } = string.Empty;
-    public string Apellido { get; set; } = string.Empty;
-}
-
-public class UsuarioInput
-{
-    public string Mail { get; set; } = string.Empty;
-    public string Nombre { get; set; } = string.Empty;
-    public string Apellido { get; set; } = string.Empty;
-}
-
-public class UsuarioResponse
-{
-    public string Mail { get; set; } = string.Empty;
-    public string Nombre { get; set; } = string.Empty;
-    public string Apellido { get; set; } = string.Empty;
-}
-

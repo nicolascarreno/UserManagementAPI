@@ -30,6 +30,16 @@ Content-Type: application/json
   "apellido": "López"
 }
 
+### Crear un usuario con nombre invalido
+POST http://localhost:5241/usuarios
+Content-Type: application/json
+
+{
+  "mail": "carla@example.com",
+  "nombre": "Carla1",
+  "apellido": "López"
+}
+
 ### Actualizar un usuario
 PUT http://localhost:5241/usuarios/ana%40example.com
 Content-Type: application/json
