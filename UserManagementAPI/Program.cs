@@ -23,7 +23,7 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 
         await context.Response.WriteAsJsonAsync(new
         {
-            Error = "Ocurrió un error inesperado."
+            Error = "Un enexpected error occurred."
         });
     });
 });
@@ -51,117 +51,123 @@ app.Use(async(context, next) =>
 app.UseHttpLogging();
 
 
-var usuarios = new ConcurrentDictionary<string, Utils.Usuario>
+var users = new ConcurrentDictionary<int, Utils.User>
 {
-    ["ana@example.com"] = new Utils.Usuario { Nombre = "Ana", Apellido = "García" },
-    ["luis@example.com"] = new Utils.Usuario { Nombre = "Luis", Apellido = "Pérez" }
+    [1] = new Utils.User { Name = "Ana", LastName = "García", Mail = "ana@example.com" },
+    [2] = new Utils.User { Name = "Luis", LastName = "Pérez", Mail = "luis@example.com"}
 };
 
-app.MapGet("/usuarios", () =>
+app.MapGet("/users", () =>
 {
-    return usuarios
-        .Select(u => new Utils.UsuarioResponse
+    return users
+        .Select(u => new Utils.UserResponse
         {
-            Mail = u.Key,
-            Nombre = u.Value.Nombre,
-            Apellido = u.Value.Apellido
+            Mail = u.Value.Mail,
+            Name = u.Value.Name,
+            LastName = u.Value.LastName,
+            Id = u.Key
         });
 });
 
-app.MapGet("/usuarios/{mail}", (string mail) =>
+app.MapGet("/users/{id}", (int id) =>
 {
-    if (string.IsNullOrWhiteSpace(mail))
+    if (id <= 0)
     {
-        return Results.BadRequest(new { Error = "El mail es obligatorio" });
+        return Results.BadRequest(new { Error = "The ID must be a positive integer" });
     }
     
-    if (!usuarios.TryGetValue(mail, out var usuario))
+    if (!users.TryGetValue(id, out var user))
     {
-        return Results.NotFound(new { Error = $"No existe un usuario con mail {mail}." });
+        return Results.NotFound(new { Error = $"User with id {id} doesn't exist." });
     }
 
-    return Results.Ok(new Utils.UsuarioResponse
+    return Results.Ok(new Utils.UserResponse
     {
-        Mail = mail,
-        Nombre = usuario.Nombre,
-        Apellido = usuario.Apellido
+        Mail = user.Mail,
+        Name = user.Name,
+        LastName = user.LastName,
+        Id = id
     });
 });
 
-app.MapPost("/usuarios", (Utils.UsuarioInput nuevoUsuario) =>
+app.MapPost("/users", (Utils.UserInput newUser) =>
 {
-    if (!Utils.ValidarUsuario(nuevoUsuario, out var error))
+    if (!Utils.ValidateUser(newUser, out var error))
     {
         return Results.BadRequest(new { Error = $"{error}" });
     }
 
-    var usuario = new Utils.Usuario
+    var user = new Utils.User
     {
-        Nombre = nuevoUsuario.Nombre,
-        Apellido = nuevoUsuario.Apellido
+        Name = newUser.Name,
+        LastName = newUser.LastName,
+        Mail = newUser.Mail
     };
 
-    if (!usuarios.TryAdd(nuevoUsuario.Mail, usuario))
+    if (!users.TryAdd(newUser.Id, user))
     {
-        return Results.BadRequest(new { Error = $"Ya existe un usuario con el mail {nuevoUsuario.Mail}." });
+        return Results.BadRequest(new { Error = $"The user with ID {newUser.Id} already exists." });
     }
 
-    var usuarioCreado = new Utils.UsuarioResponse
+    var createdUser = new Utils.UserResponse
     {
-        Mail = nuevoUsuario.Mail,
-        Nombre = nuevoUsuario.Nombre,
-        Apellido = nuevoUsuario.Apellido
+        Mail = newUser.Mail,
+        Name = newUser.Name,
+        LastName = newUser.LastName,
+        Id = newUser.Id
     };
 
-    return Results.Created($"/usuarios/{Uri.EscapeDataString(nuevoUsuario.Mail)}", usuarioCreado);
+    return Results.Created($"/usuarios/{newUser.Id}", createdUser);
 });
 
-app.MapPut("/usuarios/{mail}", (string mail, Utils.UsuarioInput usuarioActualizado) =>
+app.MapPut("/users/{id}", (int id, Utils.UserInput updatedUser) =>
 {
-    if (string.IsNullOrWhiteSpace(mail))
+    if (id <= 0)
     {
-        return Results.BadRequest(new { Error = "El mail es obligatorio" });
+        return Results.BadRequest(new { Error = "ID must be a positive integer" });
     }
 
-    if (!usuarios.TryGetValue(mail, out var usuarioExistente))
+    if (!users.TryGetValue(id, out var existingUser))
     {
-        return Results.NotFound(new { Error = $"No existe un usuario con mail {mail}." });
+        return Results.NotFound(new { Error = $"User with ID {id} doesn't exist." });
     }
 
-    if (!Utils.ValidarUsuario(usuarioActualizado, out var error))
+    if (!Utils.ValidateUser(updatedUser, out var error))
     {
         return Results.BadRequest(new { Error = $"{error}" });
     }
 
-    var usuarioActualizadoObj = new Utils.Usuario
+    var updatedUserObj = new Utils.User
     {
-        Nombre = usuarioActualizado.Nombre,
-        Apellido = usuarioActualizado.Apellido
+        Name = updatedUser.Name,
+        LastName = updatedUser.LastName,
+        Mail = updatedUser.Mail
     };
 
-    if (!usuarios.TryUpdate(mail, usuarioActualizadoObj, usuarioExistente))
+    if (!users.TryUpdate(id, updatedUserObj, existingUser))
     {
-        return Results.Conflict(new { Error = $"El usuario con mail {mail} fue modificado por otra operación." });
+        return Results.Conflict(new { Error = $"The user with ID {id} was modified by someone else." });
     }
 
-    return Results.Ok(new Utils.UsuarioResponse
+    return Results.Ok(new Utils.UserResponse
     {
-        Mail = mail,
-        Nombre = usuarioActualizado.Nombre,
-        Apellido = usuarioActualizado.Apellido
+        Mail = updatedUser.Mail,
+        Name = updatedUser.Name,
+        LastName = updatedUser.LastName,
+        Id = id
     });
 });
 
-app.MapDelete("/usuarios/{mail}", (string mail) =>
+app.MapDelete("/users/{id}", (int id) =>
 {
-    if (string.IsNullOrWhiteSpace(mail))
+    if (id <= 0)
     {
-        return Results.BadRequest(new { Error = "El mail es obligatorio" });
+        return Results.BadRequest(new { Error = "ID must be a positive integer" });
     }
 
-    if (!usuarios.TryRemove(mail, out _))
+    if (!users.TryRemove(id, out _))
     {
-        return Results.NotFound(new { Error = $"No existe un usuario con mail {mail}." });
+        return Results.NotFound(new { Error = $"User with ID {id} doesn't exist." });
     }
 
     return Results.NoContent();

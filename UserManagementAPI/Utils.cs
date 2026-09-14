@@ -1,32 +1,32 @@
 namespace UserManagementAPI.Utilidades;
 public static class Utils {
-    public static bool ValidarUsuario(UsuarioInput usuario, out string? error)
+    public static bool ValidateUser(UserInput user, out string? error)
     {
-        if (string.IsNullOrWhiteSpace(usuario.Nombre))
+        if (string.IsNullOrWhiteSpace(user.Name))
         {
-            error = "El nombre es obligatorio.";
+            error = "Name is mandatory.";
             return false;
         }
 
-        if (!usuario.Nombre.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+        if (!user.Name.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
         {
-            error = "El nombre solo puede contener letras y espacios.";
+            error = "Name can only contains whitespaces and letters.";
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(usuario.Apellido))
+        if (string.IsNullOrWhiteSpace(user.LastName))
         {
-            error = "El apellido es obligatorio.";
+            error = "Last name is mandatory.";
             return false;
         }
 
-        if (!usuario.Apellido.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+        if (!user.LastName.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
         {
-            error = "El apellido solo puede contener letras y espacios.";
+            error = "Last name can only contain whitespaces and letters.";
             return false;
         }
 
-        if (!ValidarMail(usuario.Mail, out var errorMail))
+        if (!ValidateMail(user.Mail, out var errorMail))
         {
             error = errorMail;
             return false;
@@ -36,35 +36,35 @@ public static class Utils {
         return true;
     }
     
-    public static bool ValidarMail(string mail, out string? error)
+    public static bool ValidateMail(string mail, out string? error)
     {
         if (string.IsNullOrWhiteSpace(mail))
         {
-            error = "El mail es obligatorio";
+            error = "Mail is mandatory";
             return false;
         }
         if (mail.Count(c => c == '@') != 1)
         {
-            error = "El mail debe contener exactamente un '@'";
+            error = "Mail must contain exactly one '@'";
             return false;
         }
 
-        var partes = mail.Split('@');
-        if (string.IsNullOrWhiteSpace(partes[0]) || string.IsNullOrWhiteSpace(partes[1]))
+        var parts = mail.Split('@');
+        if (string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
         {
-            error = "Deben haber caracteres antes y despues del '@'";
+            error = "There must characters before and after the '@'";
             return false;
         }
 
-        if (partes[1].Count(c => c == '.') != 1 || partes[0].Contains('.'))
+        if (parts[1].Count(c => c == '.') != 1 || parts[0].Contains('.'))
         {
-            error = "El mail debe contener un '.' despues del '@' y no debe contener '.' antes del '@'";
+            error = "Mail must contain exaclty one '.' after the '@' and musn't contain '.' before the '@'";
             return false;
         }
 
         if (mail.Contains(' '))
         {
-            error = "El mail no debe contener espacios";
+            error = "Mail can't contain whitespaces";
             return false;
         }
 
@@ -72,24 +72,27 @@ public static class Utils {
         return true;
     }
 
-    public class Usuario
+    public class User
     {
-        public string Nombre { get; set; } = string.Empty;
-        public string Apellido { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Mail { get; set; } = string.Empty;
     }
 
-    public class UsuarioInput
+    public class UserInput
     {
         public string Mail { get; set; } = string.Empty;
-        public string Nombre { get; set; } = string.Empty;
-        public string Apellido { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public int Id { get; set; }
     }
 
-    public class UsuarioResponse
+    public class UserResponse
     {
         public string Mail { get; set; } = string.Empty;
-        public string Nombre { get; set; } = string.Empty;
-        public string Apellido { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public int Id { get; set; }
     }
 }
 
