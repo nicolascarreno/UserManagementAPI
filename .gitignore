@@ -1,0 +1,33 @@
+# Build artifacts
+/UserManagementAPI/bin/
+/UserManagementAPI/obj/
+[Bb]uild/
+[Ll]ib/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET generated files
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+
+# Local environment / secrets
+appsettings.Development.json
+.env
+*.local.json
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
