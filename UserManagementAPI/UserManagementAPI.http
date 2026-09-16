@@ -1,17 +1,17 @@
 ### Get users
-GET http://localhost:5241/users?authenticated=true
+GET http://localhost:5241/api/User?authenticated=true
 Accept: application/json
 
 ### Get user by id
-GET http://localhost:5241/users/1?authenticated=true
+GET http://localhost:5241/api/User/1?authenticated=true
 Accept: application/json
 
 ### Get user by id with non-existent id
-GET http://localhost:5241/users/3?authenticated=true
+GET http://localhost:5241/api/User/3?authenticated=true
 Accept: application/json
 
 ### Create user
-POST http://localhost:5241/users?authenticated=true
+POST http://localhost:5241/api/User?authenticated=true
 Content-Type: application/json
 
 {
@@ -22,7 +22,7 @@ Content-Type: application/json
 }
 
 ### Create user with invalid mail
-POST http://localhost:5241/users?authenticated=true
+POST http://localhost:5241/api/User?authenticated=true
 Content-Type: application/json
 
 {
@@ -33,7 +33,7 @@ Content-Type: application/json
 }
 
 ### Create user with invalid name
-POST http://localhost:5241/users?authenticated=true
+POST http://localhost:5241/api/User?authenticated=true
 Content-Type: application/json
 
 {
@@ -44,7 +44,7 @@ Content-Type: application/json
 }
 
 ### Update user
-PUT http://localhost:5241/users/1?authenticated=true
+PUT http://localhost:5241/api/User/1?authenticated=true
 Content-Type: application/json
 
 {
@@ -54,4 +54,4 @@ Content-Type: application/json
 }
 
 ### Delete user
-DELETE http://localhost:5241/users/2?authenticated=true
+DELETE http://localhost:5241/api/User/2?authenticated=true
