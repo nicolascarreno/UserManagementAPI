@@ -54,4 +54,4 @@ Content-Type: application/json
 }
 
 ### Delete user
-DELETE http://localhost:5241/api/User/2?authenticated=true
+DELETE http://localhost:5241/api/User/3?authenticated=true

@@ -1,9 +1,14 @@
 using System.Collections.Concurrent;
 using UserManagementAPI.Utilities;
+using UserManagementAPI.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IUserRepository, EfUserRepository>();
+
 
 builder.Services.AddHttpLogging(logging =>
 {
