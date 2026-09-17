@@ -77,6 +77,7 @@ public static class Utils {
         public string Name { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Mail { get; set; } = string.Empty;
+        public int Id { get; set; }
     }
 
     public class UserInput

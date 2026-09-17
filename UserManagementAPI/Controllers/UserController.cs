@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Mvc;
 using UserManagementAPI.Utilities;
 
@@ -8,22 +7,24 @@ namespace UserManagementAPI.Controllers;
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-    private static readonly ConcurrentDictionary<int, Utils.User> users = new()
+    private readonly IUserRepository _repository;
+
+    public UserController(IUserRepository repository)
     {
-        [1] = new Utils.User { Name = "Ana", LastName = "García", Mail = "ana@example.com" },
-        [2] = new Utils.User { Name = "Luis", LastName = "Pérez", Mail = "luis@example.com" }
-    };
+        _repository = repository;
+    }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Utils.UserResponse>>> GetUsers()
     {
+        var users = await _repository.GetUsersAsync();
         return users
             .Select(u => new Utils.UserResponse
             {
-                Id = u.Key,
-                Name = u.Value.Name,
-                LastName = u.Value.LastName,
-                Mail = u.Value.Mail
+                Id = u.Id,
+                Name = u.Name,
+                LastName = u.LastName,
+                Mail = u.Mail
             })
             .ToList();
     }
@@ -33,13 +34,17 @@ public class UserController : ControllerBase
     {
         if (id <= 0)
             return BadRequest(new { Error = "The ID must be a positive integer" });
+   
+        var user = await _repository.GetUserByIdAsync(id);
 
-        if (!users.TryGetValue(id, out var user))
+        if(user is null)
+        {
             return NotFound(new { Error = $"User with id {id} doesn't exist." });
+        }        
 
         return Ok(new Utils.UserResponse
         {
-            Id = id,
+            Id = user.Id,
             Name = user.Name,
             LastName = user.LastName,
             Mail = user.Mail
@@ -56,11 +61,14 @@ public class UserController : ControllerBase
         {
             Name = newUser.Name,
             LastName = newUser.LastName,
-            Mail = newUser.Mail
+            Mail = newUser.Mail,
+            Id = newUser.Id
         };
 
-        if (!users.TryAdd(newUser.Id, user))
+        if (!await _repository.CreateUserAsync(user))
+        {
             return BadRequest(new { Error = $"The user with ID {newUser.Id} already exists." });
+        }
 
         var createdUser = new Utils.UserResponse
         {
@@ -79,8 +87,11 @@ public class UserController : ControllerBase
         if (id <= 0)
             return BadRequest(new { Error = "ID must be a positive integer" });
 
-        if (!users.TryGetValue(id, out var existingUser))
+        var user = await _repository.GetUserByIdAsync(id);
+        if (user is null)
+        {
             return NotFound(new { Error = $"User with ID {id} doesn't exist." });
+        }
 
         if (!Utils.ValidateUser(updatedUser, out var error))
             return BadRequest(new { Error = error });
@@ -89,11 +100,13 @@ public class UserController : ControllerBase
         {
             Name = updatedUser.Name,
             LastName = updatedUser.LastName,
-            Mail = updatedUser.Mail
+            Mail = updatedUser.Mail,
+            Id = id
         };
 
-        if (!users.TryUpdate(id, updatedUserObj, existingUser))
+        if (!await _repository.UpdateUserAsync(id, updatedUserObj, user)) {
             return Conflict(new { Error = $"The user with ID {id} was modified by someone else." });
+        };
 
         return Ok(new Utils.UserResponse
         {
@@ -110,8 +123,10 @@ public class UserController : ControllerBase
         if (id <= 0)
             return BadRequest(new { Error = "ID must be a positive integer" });
 
-        if (!users.TryRemove(id, out _))
+        if (!await _repository.DeleteUserAsync(id))
+        {
             return NotFound(new { Error = $"User with ID {id} doesn't exist." });
+        }
 
         return NoContent();
     }

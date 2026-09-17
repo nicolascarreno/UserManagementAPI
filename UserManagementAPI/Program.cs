@@ -3,6 +3,8 @@ using UserManagementAPI.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<IUserRepository, InMemoryUserRepository>();
+
 builder.Services.AddHttpLogging(logging =>
 {
     logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
