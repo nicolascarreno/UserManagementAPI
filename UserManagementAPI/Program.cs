@@ -40,7 +40,6 @@ builder.Services.AddHttpLogging(logging =>
     logging.ResponseBodyLogLimit = 4096;
 });
 
-builder.Services.AddAuthentication();
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -58,27 +57,6 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         });
     });
 });
-
-//app.Use(async(context, next) =>
-//{
-    //Simulate authentication with a query parameteter
-//    var isAuthenticated = context.Request.Query["authenticated"] == "true";
-//    if (!isAuthenticated)
-//    {
-//        if (!context.Response.HasStarted)
-//        {
-//            context.Response.StatusCode = 401;
-//            await context.Response.WriteAsync("Access Denied");    
-//        }
-//        return;    
-//    }
-//    context.Response.Cookies.Append("SecureCookie", "SecureData", new CookieOptions
-//    {
-//        HttpOnly = true,
-//        Secure = true
-//    });
-//    await next();    
-//});
 
 app.UseHttpLogging();
 
