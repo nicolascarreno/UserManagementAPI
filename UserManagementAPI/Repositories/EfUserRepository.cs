@@ -21,15 +21,23 @@ public class EfUserRepository : IUserRepository
         return await _context.Users.FindAsync(id);
     }
 
+    public async Task<Utils.User?> GetUserByMailAsync(string mail)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.Mail == mail);
+    }
+
     public async Task<bool> CreateUserAsync(Utils.User user)
     {
+        var existing = await _context.Users.FindAsync(user.Id);
+        if (existing is not null) return false;
+        
         _context.Users.Add(user);
         return await _context.SaveChangesAsync() > 0;
     }
 
     public async Task<bool> UpdateUserAsync(int id, Utils.User updatedUser)
     {
-         var existing = await _context.Users.FindAsync(id);
+        var existing = await _context.Users.FindAsync(id);
         if (existing is null) return false;
 
         existing.Name = updatedUser.Name;

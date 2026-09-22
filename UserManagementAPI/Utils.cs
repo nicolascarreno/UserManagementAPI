@@ -2,6 +2,48 @@ namespace UserManagementAPI.Utilities;
 public static class Utils {
     public static bool ValidateUser(UserInput user, out string? error)
     {
+        if (string.IsNullOrWhiteSpace(user.Password) || user.Password.Length < 8)
+        {
+            error = "Password must be at least 8 characters long";
+            return false;
+        }
+        
+        if (string.IsNullOrWhiteSpace(user.Name))
+        {
+            error = "Name is mandatory.";
+            return false;
+        }
+
+        if (!user.Name.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+        {
+            error = "Name can only contains whitespaces and letters.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(user.LastName))
+        {
+            error = "Last name is mandatory.";
+            return false;
+        }
+
+        if (!user.LastName.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+        {
+            error = "Last name can only contain whitespaces and letters.";
+            return false;
+        }
+
+        if (!ValidateMail(user.Mail, out var errorMail))
+        {
+            error = errorMail;
+            return false;
+        }
+
+        error = null;
+        return true;
+    }
+
+    public static bool ValidateUpdatedUser(UserUpdatedInput user, out string? error)
+    {       
         if (string.IsNullOrWhiteSpace(user.Name))
         {
             error = "Name is mandatory.";
@@ -78,6 +120,7 @@ public static class Utils {
         public string LastName { get; set; } = string.Empty;
         public string Mail { get; set; } = string.Empty;
         public int Id { get; set; }
+        public required string PasswordHash { get; set; }
     }
 
     public class UserInput
@@ -86,6 +129,14 @@ public static class Utils {
         public string Name { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public int Id { get; set; }
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class UserUpdatedInput
+    {
+        public string Mail { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
     }
 
     public class UserResponse

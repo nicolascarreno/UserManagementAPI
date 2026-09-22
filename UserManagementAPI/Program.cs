@@ -2,6 +2,10 @@ using System.Collections.Concurrent;
 using UserManagementAPI.Utilities;
 using UserManagementAPI.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using UserManagementAPI.TokenServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +13,25 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IUserRepository, EfUserRepository>();
 
+builder.Services.AddScoped<TokenService>();
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+            ClockSkew = TimeSpan.Zero // sin margen extra de tolerancia en la expiración
+        };
+    });
+builder.Services.AddAuthorization();
 
 builder.Services.AddHttpLogging(logging =>
 {
@@ -36,27 +59,31 @@ app.UseExceptionHandler(exceptionHandlerApp =>
     });
 });
 
-app.Use(async(context, next) =>
-{
+//app.Use(async(context, next) =>
+//{
     //Simulate authentication with a query parameteter
-    var isAuthenticated = context.Request.Query["authenticated"] == "true";
-    if (!isAuthenticated)
-    {
-        if (!context.Response.HasStarted)
-        {
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Access Denied");    
-        }
-        return;    
-    }
-    context.Response.Cookies.Append("SecureCookie", "SecureData", new CookieOptions
-    {
-        HttpOnly = true,
-        Secure = true
-    });
-    await next();    
-});
+//    var isAuthenticated = context.Request.Query["authenticated"] == "true";
+//    if (!isAuthenticated)
+//    {
+//        if (!context.Response.HasStarted)
+//        {
+//            context.Response.StatusCode = 401;
+//            await context.Response.WriteAsync("Access Denied");    
+//        }
+//        return;    
+//    }
+//    context.Response.Cookies.Append("SecureCookie", "SecureData", new CookieOptions
+//    {
+//        HttpOnly = true,
+//        Secure = true
+//    });
+//    await next();    
+//});
+
 app.UseHttpLogging();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.Run();

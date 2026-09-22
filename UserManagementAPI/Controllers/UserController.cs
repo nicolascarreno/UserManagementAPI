@@ -1,10 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UserManagementAPI.Utilities;
 
-namespace UserManagementAPI.Controllers;
+namespace UserManagementAPI.UserControllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UserController : ControllerBase
 {
     private readonly IUserRepository _repository;
@@ -62,7 +64,9 @@ public class UserController : ControllerBase
             Name = newUser.Name,
             LastName = newUser.LastName,
             Mail = newUser.Mail,
-            Id = newUser.Id
+            Id = newUser.Id,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(newUser.Password)
+
         };
 
         if (!await _repository.CreateUserAsync(user))
@@ -82,7 +86,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<Utils.UserResponse>> PutUser(int id, [FromBody] Utils.UserInput updatedUser) 
+    public async Task<ActionResult<Utils.UserResponse>> PutUser(int id, [FromBody] Utils.UserUpdatedInput updatedUser) 
     {
         if (id <= 0)
             return BadRequest(new { Error = "ID must be a positive integer" });
@@ -93,7 +97,7 @@ public class UserController : ControllerBase
             return NotFound(new { Error = $"User with ID {id} doesn't exist." });
         }
 
-        if (!Utils.ValidateUser(updatedUser, out var error))
+        if (!Utils.ValidateUpdatedUser(updatedUser, out var error))
             return BadRequest(new { Error = error });
 
         var updatedUserObj = new Utils.User
@@ -101,10 +105,11 @@ public class UserController : ControllerBase
             Name = updatedUser.Name,
             LastName = updatedUser.LastName,
             Mail = updatedUser.Mail,
-            Id = id
+            Id = id,
+            PasswordHash = user.PasswordHash
         };
 
-        if (!await _repository.UpdateUserAsync(id, updatedUserObj, user)) {
+        if (!await _repository.UpdateUserAsync(id, updatedUserObj)) {
             return Conflict(new { Error = $"The user with ID {id} was modified by someone else." });
         };
 

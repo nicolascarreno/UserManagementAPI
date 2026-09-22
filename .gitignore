@@ -1,6 +1,6 @@
 # Build artifacts
-/UserManagementAPI/bin/
-/UserManagementAPI/obj/
+UserManagementAPI/bin
+UserManagementAPI/obj
 [Bb]uild/
 [Ll]ib/
 

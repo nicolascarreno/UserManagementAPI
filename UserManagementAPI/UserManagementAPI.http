@@ -1,51 +1,71 @@
-### Get users
-GET http://localhost:5241/api/User?authenticated=true
+### Login
+# @name login
+POST http://localhost:5241/api/auth/login
+Content-Type: application/json
+
+{
+  "mail": "ana@example.com",
+  "password": "Ana12345"
+}
+
+### Get users (usando el token del login de arriba)
+GET http://localhost:5241/api/User
 Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
 
 ### Get user by id
-GET http://localhost:5241/api/User/1?authenticated=true
+GET http://localhost:5241/api/User/1?
 Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
 
 ### Get user by id with non-existent id
-GET http://localhost:5241/api/User/3?authenticated=true
+GET http://localhost:5241/api/User/3?
 Accept: application/json
+Authorization: Bearer {{login.response.body.token}}
 
 ### Create user
-POST http://localhost:5241/api/User?authenticated=true
+POST http://localhost:5241/api/User
 Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
 
 {
   "mail": "carla@example.com",
   "name": "Carla",
   "lastname": "López",
-  "id": 3
+  "id": 3,
+  "password": "Carla12345"
 }
 
 ### Create user with invalid mail
-POST http://localhost:5241/api/User?authenticated=true
+POST http://localhost:5241/api/User
 Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
 
 {
   "mail": "carla@examplecom",
   "name": "Carla",
   "lastname": "López",
-  "id": 3
+  "id": 3,
+  "password": "Carla12345"
 }
 
 ### Create user with invalid name
-POST http://localhost:5241/api/User?authenticated=true
+POST http://localhost:5241/api/User
 Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
 
 {
   "mail": "carla@example.com",
   "name": "Carla1",
   "lastname": "López",
-  "id": 3
+  "id": 3,
+  "password": "Carla12345"
 }
 
 ### Update user
-PUT http://localhost:5241/api/User/1?authenticated=true
+PUT http://localhost:5241/api/User/1
 Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
 
 {
   "mail": "ana@example.com",
@@ -54,4 +74,5 @@ Content-Type: application/json
 }
 
 ### Delete user
-DELETE http://localhost:5241/api/User/3?authenticated=true
+DELETE http://localhost:5241/api/User/3
+Authorization: Bearer {{login.response.body.token}}
