@@ -1,13 +1,39 @@
-using System.Collections.Concurrent;
-using UserManagementAPI.Utilities;
-using UserManagementAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Swashbuckle.AspNetCore;
 using System.Text;
 using UserManagementAPI.TokenServices;
+using UserManagementAPI.Data;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+
+const string schemeId = "Bearer";
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition(schemeId, new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingresá el token JWT así: Bearer {tu token}"
+    });
+
+    options.AddSecurityRequirement(document =>
+    {
+        var requirement = new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference(schemeId, document)] = new List<string>()
+        };
+        return requirement;
+    });
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -58,10 +84,16 @@ app.UseExceptionHandler(exceptionHandlerApp =>
     });
 });
 
-app.UseHttpLogging();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
+app.UseHttpLogging();
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
 app.Run();
