@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Swashbuckle.AspNetCore;
 using System.Text;
 using UserManagementAPI.TokenServices;
 using UserManagementAPI.Data;
