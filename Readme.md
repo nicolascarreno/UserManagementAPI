@@ -404,22 +404,3 @@ Se optó por JWT por ser una solución estándar para autenticación en APIs RES
 Se usó `BCrypt.Net-Next` para almacenar las contraseñas con hashing. Esto evita guardar contraseñas en texto plano y ayuda a proteger la información sensible del usuario.
 
 ---
-
-## Conclusión
-
-UserManagementAPI es un ejemplo práctico de una API REST moderna con autenticación JWT, persistencia con SQLite y arquitectura basada en buenas prácticas de ASP.NET Core. La solución es ideal para aprender conceptos de:
-
-- autenticación y autorización,
-- CRUD con Entity Framework,
-- inyección de dependencias,
-- validación de entrada,
-- documentación con Swagger,
-- separación por responsabilidades.
-
-Si quieres, en una siguiente etapa se puede extender con:
-
-- registro de usuarios con confirmación por email,
-- roles y permisos,
-- paginación y filtros,
-- tests unitarios e integración,
-- Docker para despliegue.
